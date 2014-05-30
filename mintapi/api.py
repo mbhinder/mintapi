@@ -31,7 +31,7 @@ def get_accounts(email, password):
     if not session.get(START_URL).status_code == requests.codes.ok:
         raise Exception("Failed to load Mint main page '{}'"
                         .format(START_URL))
-    response = session.post(LOGIN_PAGE, data=data, headers=headers).text
+    response = session.post(LOGIN_PAGE, data=data, headers=HEADERS).text
     if "token" not in response:
         raise Exception("Mint.com login failed[1]")
 
@@ -60,7 +60,7 @@ def get_accounts(email, password):
             "service": "MintAccountService",
             "task": "getAccountsSortedByBalanceDescending"}])}
     response = session.post(CONTROLLER_BASE+token, data=data,
-                            headers=headers).text
+                            headers=HEADERS).text
     if request_id not in response:
         raise Exception("Could not parse account data: " + response)
     response = json.loads(response)
