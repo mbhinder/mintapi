@@ -10,7 +10,7 @@ START_URL = "https://wwws.mint.com/login.event?task=L"
 LOGIN_PAGE = "https://wwws.mint.com/loginUserSubmit.xevent"
 HEADERS = {"accept": "application/json"}
 CONTROLLER_BASE = "https://wwws.mint.com/bundledServiceController.xevent?" +\
-    "legacy=false&token="
+                  "legacy=false&token="
 
 
 class MintHTTPSAdapter(HTTPAdapter):
