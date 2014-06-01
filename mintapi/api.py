@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+'''API to interact with Mint.com from Python'''
 import json
 import requests
 import ssl
@@ -14,12 +16,14 @@ CONTROLLER_BASE = "https://wwws.mint.com/bundledServiceController.xevent?" +\
 
 
 class MintHTTPSAdapter(HTTPAdapter):
+    '''Adapter to use SSLv3 with requests'''
     def init_poolmanager(self, connections, maxsize, **kwargs):
         self.poolmanager = PoolManager(num_pools=connections, maxsize=maxsize,
                                        ssl_version=ssl.PROTOCOL_SSLv3,
                                        **kwargs)
 
 class MintApi(object):
+    '''API to interact with Mint.com'''
     def __init__(self, email, password):
         self.email = email
         self.password = password
@@ -28,6 +32,9 @@ class MintApi(object):
         self.request_id = "42"
 
     def login(self):
+        """
+        Login to mint.com with the credentials supplied in the constructor
+        """
         data = {"username": self.email, "password": self.password,
                 "task": "L", "browser": "firefox", "browserVersion": "27",
                 "os": "linux"}
@@ -35,7 +42,8 @@ class MintApi(object):
         if not self.session.get(START_URL).status_code == requests.codes.ok:
             raise Exception("Failed to load Mint main page '{}'"
                             .format(START_URL))
-        response = self.session.post(LOGIN_PAGE, data=data, headers=HEADERS).text
+        response = self.session.post(LOGIN_PAGE, data=data,
+                                     headers=HEADERS).text
         if "token" not in response:
             raise Exception("Mint.com login failed[1]")
         response = json.loads(response)
@@ -44,29 +52,43 @@ class MintApi(object):
         self.token = response["sUser"]["token"]
 
     def get_accounts(self):
+        """Return list of accounts in JSON format"""
         data = {"input": json.dumps([
             {"args":
-                {"types":
-                    ["BANK",
-                    "CREDIT",
-                    "INVESTMENT",
-                    "LOAN",
-                    "MORTGAGE",
-                    "OTHER_PROPERTY",
-                    "REAL_ESTATE",
-                    "VEHICLE",
-                    "UNCLASSIFIED"]},
-                "id": self.request_id,
-                "service": "MintAccountService",
-                "task": "getAccountsSortedByBalanceDescending"}])}
+                    {"types":
+                        ["BANK",
+                         "CREDIT",
+                         "INVESTMENT",
+                         "LOAN",
+                         "MORTGAGE",
+                         "OTHER_PROPERTY",
+                         "REAL_ESTATE",
+                         "VEHICLE",
+                         "UNCLASSIFIED"]},
+            "id": self.request_id,
+            "service": "MintAccountService",
+            "task": "getAccountsSortedByBalanceDescending"}])}
         response = self.session.post(CONTROLLER_BASE+self.token, data=data,
-                                headers=HEADERS).text
+                                     headers=HEADERS).text
         if self.request_id not in response:
             raise Exception("Could not parse account data: " + response)
         response = json.loads(response)
-        accounts = response["response"][self.request_id]["response"]
-        return accounts
+        return response["response"][self.request_id]["response"]
 
+    def get_transaction_cashflow(self, months=6):
+        """Get all transactions"""
+        data = {"input": json.dumps([
+            {"args":
+                     {"numMonths":months},
+             "service":"MintTransactionService",
+             "task":"getCashFlow",
+             "id":self.request_id}])}
+        response = self.session.post(CONTROLLER_BASE+self.token, data=data,
+                                     headers=HEADERS).text
+        if self.request_id not in response:
+            raise Exception("Could not parse transaction data: " + response)
+        response = json.loads(response)
+        return response["response"][self.request_id]["response"]
 
 def main():
     try:
